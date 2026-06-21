@@ -142,7 +142,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception as e:
         await update.message.reply_text(f"❌ خطا: {str(e)}")
 
-async def main():
+def main():
     """راه‌اندازی ربات"""
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     
