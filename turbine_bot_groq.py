@@ -152,8 +152,6 @@ async def main():
     app.add_handler(CallbackQueryHandler(language_callback, pattern="^lang_"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
-    logger.info("🚀 ربات شروع می‌شود...")
-    await app.run_polling(allowed_updates=Update.ALL_TYPES)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    logger.info("🚀 ربات شروع می‌شود...") app.run_polling(allowed_updates=Update.ALL_TYPES)
+app.run_polling(allowed_updates=Update.ALL_TYPES)
+main()
