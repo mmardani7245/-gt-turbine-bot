@@ -1,11 +1,13 @@
+
 #!/usr/bin/env python3
 """
-TURBINE REPAIR ASSISTANT BOT - OpenAI Version
-ربات دستیار تعمیرات توربین گازی و سیکل ترکیبی
+TURBINE REPAIR ASSISTANT BOT
+ربات دستیار تعمیرات توربین گازی
 """
 
 import os
 import logging
+import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -31,26 +33,16 @@ if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-SYSTEM_PROMPT_FA = """تو یک دستیار تخصصی در زمینه تعمیرات توربین های گازی و سیکل ترکیبی نیروگاه هستی.
-تخصص های تو:
-- قاب GE 9، قاب 7، MS5001
-- گیربکس کمکی و تجهیزات جانبی
-- تشخیص و رفع عیب
-- برنامه تعمیرات و نگهداری
-- برآورد هزینه ها
-روش کار:
-1. سوال کاربر را به دقت بخوان
-2. راه حل فنی و عملی ارائه بده
-3. از تجربه واقعی استفاده کن
-4. همیشه ایمنی را اولویت بده"""
+SYSTEM_PROMPT = """تو یک دستیار تخصصی تعمیرات توربین گازی هستی.
+تخصص: GE Frame 9، Frame 7، MS5001، گیربکس، تجهیزات جانبی
+همیشه فارسی جواب بده. ایمنی اولویت اول است."""
 
-async def get_ai_response(user_message: str, lang: str = "fa") -> str:
-    system = SYSTEM_PROMPT_FA
+async def get_ai_response(user_message: str) -> str:
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": system},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message}
             ],
             max_tokens=1024,
@@ -62,12 +54,12 @@ async def get_ai_response(user_message: str, lang: str = "fa") -> str:
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "سلام!\nربات دستیار تعمیرات توربین\nکمک - /help\nراهنما - /settings\n"
+        "سلام!\nربات دستیار تعمیرات توربین\n/help - کمک\n/settings - راهنما"
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "مثال: GE Frame 9 چگونه تعمیر کنم؟\n\n/start - راهنما\n/help - سوالات تخصصی بپرسید"
+        "مثال: GE Frame 9 چگونه تعمیر کنم?\n\n/start - شروع\n/help - راهنما"
     )
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -75,22 +67,18 @@ async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         [InlineKeyboardButton("فارسی", callback_data="lang_fa"),
          InlineKeyboardButton("English", callback_data="lang_en")]
     ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("زبانت را عوض کن:", reply_markup=reply_markup)
+    await update.message.reply_text("زبان:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def language_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-    lang = query.data.split("_")[1]
-    context.user_data["lang"] = lang
     await query.message.reply_text("تنظیم شد")
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     text = update.message.text
-    lang = context.user_data.get("lang", "fa")
     await update.message.chat.send_action(action="typing")
     try:
-        response = await get_ai_response(text, lang)
+        response = await get_ai_response(text)
         if len(response) > 4096:
             for i in range(0, len(response), 4096):
                 await update.message.reply_text(response[i:i+4096])
@@ -107,7 +95,6 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(language_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     logger.info("ربات شروع به کار میکند...")
-  import time
     while True:
         try:
             app.run_polling(
@@ -118,4 +105,6 @@ def main() -> None:
         except Exception as e:
             logger.error(f"خطا: {e}")
             time.sleep(5)
+
+if __name__ == "__main__":
     main()
