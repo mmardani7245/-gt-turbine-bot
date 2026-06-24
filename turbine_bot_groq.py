@@ -107,6 +107,15 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(language_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     logger.info("ربات شروع به کار میکند...")
-    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
-if __name__ == "__main__":
+  import time
+    while True:
+        try:
+            app.run_polling(
+                allowed_updates=Update.ALL_TYPES,
+                drop_pending_updates=True
+            )
+            break
+        except Exception as e:
+            logger.error(f"خطا: {e}")
+            time.sleep(5)
     main()
