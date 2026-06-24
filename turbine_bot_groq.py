@@ -1,13 +1,6 @@
-
 #!/usr/bin/env python3
-"""
-TURBINE REPAIR ASSISTANT BOT
-ربات دستیار تعمیرات توربین گازی
-"""
-
 import os
 import logging
-import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
@@ -19,17 +12,13 @@ from telegram.ext import (
 )
 from openai import OpenAI
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-
-if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
-    raise ValueError("TELEGRAM_BOT_TOKEN یا OPENAI_API_KEY موجود نیست")
+WEBHOOK_URL = os.environ.get("WEBHOOK_URL", "https://gt-turbine-bot-1.onrender.com")
+PORT = int(os.environ.get("PORT", 8443))
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -54,7 +43,7 @@ async def get_ai_response(user_message: str) -> str:
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "سلام!\nربات دستیار تعمیرات توربین\n/help - کمک\n/settings - راهنما"
+        "سلام!\nربات دستیار تعمیرات توربین\n/help - کمک\n/settings - تنظیمات"
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -63,10 +52,10 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     )
 
 async def settings_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    keyboard = [
-        [InlineKeyboardButton("فارسی", callback_data="lang_fa"),
-         InlineKeyboardButton("English", callback_data="lang_en")]
-    ]
+    keyboard = [[
+        InlineKeyboardButton("فارسی", callback_data="lang_fa"),
+        InlineKeyboardButton("English", callback_data="lang_en")
+    ]]
     await update.message.reply_text("زبان:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def language_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -95,16 +84,12 @@ def main() -> None:
     app.add_handler(CallbackQueryHandler(language_callback))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
     logger.info("ربات شروع به کار میکند...")
-    while True:
-        try:
-            app.run_polling(
-                allowed_updates=Update.ALL_TYPES,
-                drop_pending_updates=True
-            )
-            break
-        except Exception as e:
-            logger.error(f"خطا: {e}")
-            time.sleep(5)
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=f"{WEBHOOK_URL}/webhook",
+        drop_pending_updates=True,
+    )
 
 if __name__ == "__main__":
     main()
